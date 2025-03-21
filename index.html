@@ -24,8 +24,10 @@
             text-align: center;
             background: #fff;
             border-top: 1px solid #ddd;
+            overflow-x: auto; /* Add horizontal scrolling for controls */
+            white-space: nowrap; /* Prevent controls from wrapping */
         }
-        button, input {
+        button, input, .slider-container {
             padding: 8px 15px;
             margin: 5px;
             font-size: 14px;
@@ -34,9 +36,39 @@
             color: white;
             border: none;
             border-radius: 5px;
+            display: inline-block; /* Ensure elements are displayed inline */
+            vertical-align: middle; /* Align elements vertically */
         }
-        button:hover, input:hover {
+         button:hover, input[type="color"]:hover, input[type="range"]:hover {
             background: #0056b3;
+        }
+        input[type="range"] {
+            width: 80px; /* Adjust range input width as needed */
+            cursor: pointer;
+             -webkit-appearance: none;  /* Remove default styles for Chrome/Safari */
+            appearance: none;
+            background: #ddd; /* Set the background of the track */
+            border-radius: 5px;
+            outline: none;
+        }
+
+      /* Style the thumb (slider handle) */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; /* Remove default styles for Chrome/Safari */
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            background: #007BFF; /* Use your main color */
+            border-radius: 50%; /* Make it round */
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb { /* Firefox */
+            width: 15px;
+            height: 15px;
+            background: #007BFF;
+            border-radius: 50%;
+            cursor: pointer;
         }
         audio {
             width: 100%;
@@ -47,13 +79,23 @@
             font-size: 14px;
             margin-right: 5px;
         }
+
+        .slider-container {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
         @media (max-width: 600px) {
-            button, input {
+            button, input, .slider-container {
                 padding: 6px 10px;
                 font-size: 12px;
             }
             .controls {
                 padding: 5px;
+            }
+              input[type="range"] {
+                width: 60px; /* Smaller width on mobile */
             }
         }
     </style>
@@ -66,12 +108,30 @@
         <label for="bgColor">배경 색상:</label>
         <input type="color" id="bgColor" value="#f0f0f0">
         <br>
-        <label for="ambientLight">주변 조명 밝기:</label>
-        <input type="range" id="ambientLight" min="0" max="2" step="0.1" value="0.8">
+
+       <div class="slider-container">
+            <label for="ambientLight">주변광:</label>
+            <input type="range" id="ambientLight" min="0" max="5" step="0.1" value="1.5">
+        </div>
         <br>
-        <label for="dirLight">직접 조명 밝기:</label>
-        <input type="range" id="dirLight" min="0" max="2" step="0.1" value="1.0">
+        <div class="slider-container">
+          <label for="dirLight">직접광:</label>
+          <input type="range" id="dirLight" min="0" max="5" step="0.1" value="2.0">
+        </div>
         <br>
+
+        <div class="slider-container">
+             <label for="rotationSpeed">회전 속도:</label>
+             <input type="range" id="rotationSpeed" min="0" max="0.1" step="0.005" value="0.01">
+        </div>
+        <br>
+
+          <div class="slider-container">
+            <label for="rotationDirection">회전 방향:</label>
+             <input type="range" id="rotationDirection" min="-1" max="1" step="2" value="1">
+        </div>
+        <br>
+
         <audio id="audioPlayer" controls loop>
             <source src="oiia-oiia-sound.mp3" type="audio/mp3">
             브라우저가 오디오를 지원하지 않습니다.
@@ -88,12 +148,14 @@
         renderer.setSize(window.innerWidth, window.innerHeight * 0.7);
         document.getElementById('canvas').appendChild(renderer.domElement);
 
-        // 조명 추가 (기본값을 밝게 설정)
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // 주변광
+
+        // 조명 (더 밝게 기본값 설정)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); // 주변광, 초기 밝기 1.5
         scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); // 방향광
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0); // 방향광, 초기 밝기 2.0
         directionalLight.position.set(0, 1, 1);
         scene.add(directionalLight);
+
 
         // GLB 모델 로드
         const loader = new THREE.GLTFLoader();
@@ -163,12 +225,28 @@
             isDragging = false;
         });
 
-        // 자동 회전 토글
+        // 자동 회전 토글, 회전 속도, 회전 방향
         const toggleButton = document.getElementById('toggleRotate');
+        const rotationSpeedInput = document.getElementById('rotationSpeed');
+        const rotationDirectionInput = document.getElementById('rotationDirection');
+        let rotationSpeed = parseFloat(rotationSpeedInput.value);
+        let rotationDirection = parseInt(rotationDirectionInput.value);
+
+
         toggleButton.addEventListener('click', () => {
             isRotating = !isRotating;
             toggleButton.textContent = `자동 회전 ${isRotating ? 'OFF' : 'ON'}`;
         });
+
+        rotationSpeedInput.addEventListener('input', (e) => {
+           rotationSpeed = parseFloat(e.target.value);
+        });
+
+        rotationDirectionInput.addEventListener('input', (e) => {
+            rotationDirection = parseInt(e.target.value);
+        });
+
+
 
         // 배경 색상 조절
         const bgColorInput = document.getElementById('bgColor');
@@ -200,7 +278,7 @@
         function animate() {
             requestAnimationFrame(animate);
             if (model && isRotating) {
-                model.rotation.y += 0.01;
+                model.rotation.y += rotationSpeed * rotationDirection;
             }
             renderer.render(scene, camera);
         }
