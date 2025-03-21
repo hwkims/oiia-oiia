@@ -111,24 +111,18 @@
 
        <div class="slider-container">
             <label for="ambientLight">주변광:</label>
-            <input type="range" id="ambientLight" min="0" max="5" step="0.1" value="1.5">
+            <input type="range" id="ambientLight" min="0" max="20" step="0.1" value="1.5">
         </div>
         <br>
         <div class="slider-container">
           <label for="dirLight">직접광:</label>
-          <input type="range" id="dirLight" min="0" max="5" step="0.1" value="2.0">
+          <input type="range" id="dirLight" min="0" max="20" step="0.1" value="5.0">
         </div>
         <br>
 
         <div class="slider-container">
              <label for="rotationSpeed">회전 속도:</label>
-             <input type="range" id="rotationSpeed" min="0" max="0.1" step="0.005" value="0.01">
-        </div>
-        <br>
-
-          <div class="slider-container">
-            <label for="rotationDirection">회전 방향:</label>
-             <input type="range" id="rotationDirection" min="-1" max="1" step="2" value="1">
+             <input type="range" id="rotationSpeed" min="-1" max="1" step="0.005" value="0.01">
         </div>
         <br>
 
@@ -150,9 +144,9 @@
 
 
         // 조명 (더 밝게 기본값 설정)
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); // 주변광, 초기 밝기 1.5
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
         scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0); // 방향광, 초기 밝기 2.0
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 5.0);
         directionalLight.position.set(0, 1, 1);
         scene.add(directionalLight);
 
@@ -228,9 +222,8 @@
         // 자동 회전 토글, 회전 속도, 회전 방향
         const toggleButton = document.getElementById('toggleRotate');
         const rotationSpeedInput = document.getElementById('rotationSpeed');
-        const rotationDirectionInput = document.getElementById('rotationDirection');
+
         let rotationSpeed = parseFloat(rotationSpeedInput.value);
-        let rotationDirection = parseInt(rotationDirectionInput.value);
 
 
         toggleButton.addEventListener('click', () => {
@@ -242,9 +235,6 @@
            rotationSpeed = parseFloat(e.target.value);
         });
 
-        rotationDirectionInput.addEventListener('input', (e) => {
-            rotationDirection = parseInt(e.target.value);
-        });
 
 
 
@@ -278,7 +268,7 @@
         function animate() {
             requestAnimationFrame(animate);
             if (model && isRotating) {
-                model.rotation.y += rotationSpeed * rotationDirection;
+                model.rotation.y += rotationSpeed;
             }
             renderer.render(scene, camera);
         }
