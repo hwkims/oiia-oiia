@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model & Audio Player</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        #canvas {
+            width: 100%;
+            height: 70%;
+        }
+        .controls {
+            padding: 10px;
+            text-align: center;
+            background: #fff;
+            border-top: 1px solid #ddd;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        audio {
+            width: 100%;
+            max-width: 300px;
+            margin-top: 10px;
+        }
+        @media (max-width: 600px) {
+            button {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+            .controls {
+                padding: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas"></div>
+    <div class="controls">
+        <button id="toggleRotate">자동 회전 ON</button>
+        <br>
+        <audio id="audioPlayer" controls>
+            <source src="oiia-oiia-sound.mp3" type="audio/mp3">
+            브라우저가 오디오를 지원하지 않습니다.
+        </audio>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        // Three.js 설정
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / (window.innerHeight * 0.7), 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight * 0.7);
+        document.getElementById('canvas').appendChild(renderer.domElement);
+
+        // 조명 추가
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(0, 1, 1);
+        scene.add(directionalLight);
+
+        // GLB 모델 로드
+        const loader = new THREE.GLTFLoader();
+        let model;
+        let isRotating = false;
+
+        loader.load(
+            'oiia-oiia.glb',
+            (gltf) => {
+                model = gltf.scene;
+                scene.add(model);
+                model.position.set(0, 0, 0);
+                model.scale.set(1, 1, 1); // 필요에 따라 크기 조정
+
+                // 모델을 화면에 맞게 조정
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                camera.position.z = maxDim * 2;
+                camera.lookAt(center);
+            },
+            undefined,
+            (error) => {
+                console.error('GLB 파일 로드 중 오류 발생:', error);
+            }
+        );
+
+        // 마우스 드래그로 회전
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        renderer.domElement.addEventListener('mousedown', (e) => {
+            isDragging = true;
+        });
+        renderer.domElement.addEventListener('mousemove', (e) => {
+            if (isDragging && model) {
+                const deltaMove = {
+                    x: e.offsetX - previousMousePosition.x,
+                    y: e.offsetY - previousMousePosition.y
+                };
+                model.rotation.y += deltaMove.x * 0.005;
+                model.rotation.x += deltaMove.y * 0.005;
+            }
+            previousMousePosition = { x: e.offsetX, y: e.offsetY };
+        });
+        renderer.domElement.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // 터치 이벤트 (모바일 지원)
+        renderer.domElement.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        });
+        renderer.domElement.addEventListener('touchmove', (e) => {
+            if (isDragging && model) {
+                const deltaMove = {
+                    x: e.touches[0].clientX - previousMousePosition.x,
+                    y: e.touches[0].clientY - previousMousePosition.y
+                };
+                model.rotation.y += deltaMove.x * 0.005;
+                model.rotation.x += deltaMove.y * 0.005;
+            }
+            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        });
+        renderer.domElement.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        // 자동 회전 토글
+        const toggleButton = document.getElementById('toggleRotate');
+        toggleButton.addEventListener('click', () => {
+            isRotating = !isRotating;
+            toggleButton.textContent = `자동 회전 ${isRotating ? 'OFF' : 'ON'}`;
+        });
+
+        // 창 크기 조정 처리
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / (window.innerHeight * 0.7);
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight * 0.7);
+        });
+
+        // 애니메이션 루프
+        function animate() {
+            requestAnimationFrame(animate);
+            if (model && isRotating) {
+                model.rotation.y += 0.01; // 자동 회전 속도
+            }
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
