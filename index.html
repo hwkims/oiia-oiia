@@ -103,6 +103,11 @@
 <body>
     <div id="canvas"></div>
     <div class="controls">
+        
+                <audio id="audioPlayer" controls loop>
+            <source src="oiia-oiia-sound.mp3" type="audio/mp3">
+            브라우저가 오디오를 지원하지 않습니다.
+        </audio>
         <button id="toggleRotate">자동 회전 ON</button>
         <br>
         <label for="bgColor">배경 색상:</label>
@@ -111,12 +116,12 @@
 
        <div class="slider-container">
             <label for="ambientLight">주변광:</label>
-            <input type="range" id="ambientLight" min="0" max="20" step="0.1" value="1.5">
+            <input type="range" id="ambientLight" min="0" max="30" step="0.1" value="1.5">
         </div>
         <br>
         <div class="slider-container">
           <label for="dirLight">직접광:</label>
-          <input type="range" id="dirLight" min="0" max="20" step="0.1" value="5.0">
+          <input type="range" id="dirLight" min="0" max="30" step="0.1" value="5.0">
         </div>
         <br>
 
@@ -126,10 +131,9 @@
         </div>
         <br>
 
-        <audio id="audioPlayer" controls loop>
-            <source src="oiia-oiia-sound.mp3" type="audio/mp3">
-            브라우저가 오디오를 지원하지 않습니다.
-        </audio>
+
+        
+         <br>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
@@ -144,9 +148,9 @@
 
 
         // 조명 (더 밝게 기본값 설정)
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 3.5);
         scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 5.0);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 8.0);
         directionalLight.position.set(0, 1, 1);
         scene.add(directionalLight);
 
