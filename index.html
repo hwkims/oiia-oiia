@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced 3D Model & Audio Player</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #e0e0e0; /* Slightly darker base background */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Nicer font */
+        }
+        #canvas-container { /* Renamed for clarity */
+            width: 100%;
+            flex-grow: 1; /* Takes up remaining vertical space */
+            position: relative; /* Needed for potential overlays later */
+            background: #f0f0f0; /* Initial canvas area background */
+        }
+        .controls {
+            padding: 15px;
+            background: #ffffff; /* White background for controls */
+            border-top: 2px solid #d0d0d0;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap; /* Allow items to wrap */
+            gap: 15px; /* Spacing between control items/groups */
+            align-items: center;
+            justify-content: center; /* Center controls horizontally */
+            overflow-x: auto; /* Keep horizontal scroll for smaller screens */
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column; /* Stack label and input/button vertically */
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            background-color: #f8f8f8;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        .control-group label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 3px;
+        }
+
+        button, input[type="color"], .slider-container input[type="range"] {
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            background: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            vertical-align: middle;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+         input[type="color"] {
+             padding: 4px; /* Adjust padding for color input */
+             min-height: 28px; /* Ensure consistent height */
+             min-width: 40px;
+         }
+
+         button:hover {
+            background: #0056b3;
+            transform: translateY(-1px); /* Subtle lift effect */
+             box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+         button:active {
+            transform: translateY(0px);
+             box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+         }
+
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="range"] {
+            width: 100px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background: #ddd;
+            border-radius: 5px;
+            outline: none;
+            transition: background-color 0.2s ease;
+        }
+        input[type="range"]:hover {
+             background: #ccc;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #007BFF;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+             border: 2px solid white; /* Add border to thumb */
+             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+             background: #0056b3;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            background: #007BFF;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+             transition: background-color 0.2s ease;
+        }
+         input[type="range"]::-moz-range-thumb:hover {
+             background: #0056b3;
+         }
+
+
+        audio {
+            max-width: 280px; /* Adjust size */
+            border-radius: 5px;
+            /* Consider custom styling later if needed */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .controls {
+                padding: 10px;
+                gap: 10px;
+                justify-content: flex-start; /* Align left on mobile */
+            }
+            button, input[type="color"], .slider-container input[type="range"] {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+            input[type="range"] {
+                width: 80px;
+            }
+             input[type="color"] {
+                 min-height: 24px;
+                 min-width: 35px;
+             }
+            audio {
+                 max-width: 200px;
+             }
+             .control-group label {
+                 font-size: 11px;
+             }
+        }
+    </style>
+</head>
+<body>
+    <!-- Container for the Three.js canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Controls Area -->
+    <div class="controls">
+
+        <audio id="audioPlayer" controls loop>
+            <source src="oiia-oiia-sound.mp3" type="audio/mp3">
+            Your browser does not support the audio element.
+        </audio>
+
+        <div class="control-group">
+             <label>Rotation</label>
+             <button id="toggleRotate">Auto Rotate ON</button>
+        </div>
+
+         <div class="control-group">
+            <label for="rotationSpeed">Rotation Speed</label>
+            <div class="slider-container">
+                 <input type="range" id="rotationSpeed" min="-0.5" max="0.5" step="0.002" value="0.01">
+            </div>
+         </div>
+
+        <div class="control-group">
+             <label for="bgColor">Background</label>
+             <input type="color" id="bgColor" value="#f0f0f0">
+        </div>
+
+        <div class="control-group">
+            <label>Lighting</label>
+             <div class="slider-container">
+                 <span>Amb:</span> <input type="range" id="ambientLight" min="0" max="10" step="0.1" value="2.0">
+             </div>
+             <div class="slider-container">
+                 <span>Hemi:</span> <input type="range" id="hemiLight" min="0" max="10" step="0.1" value="1.5">
+             </div>
+            <div class="slider-container">
+                 <span>Dir:</span> <input type="range" id="dirLight" min="0" max="20" step="0.1" value="8.0">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Fun Effects</label>
+             <button id="rainbowBgButton">Rainbow BG</button>
+             <button id="rainbowLightsButton">Rainbow Lights</button>
+        </div>
+
+    </div>
+
+    <!-- Load Three.js and GLTFLoader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        // --- Basic Setup ---
+        const canvasContainer = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, canvasContainer.clientWidth / canvasContainer.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+
+        renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio); // Better resolution on high DPI screens
+        renderer.outputEncoding = THREE.sRGBEncoding; // Crucial for correct color/light display
+        renderer.toneMapping = THREE.ACESFilmicToneMapping; // Nice looking tone mapping
+        renderer.toneMappingExposure = 1.0; // Adjust exposure if needed
+        canvasContainer.appendChild(renderer.domElement);
+
+        // --- Lighting --- (Made brighter, added Hemisphere)
+        const initialAmbientIntensity = 2.0;
+        const initialHemiIntensity = 1.5;
+        const initialDirIntensity = 8.0;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, initialAmbientIntensity);
+        scene.add(ambientLight);
+
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, initialHemiIntensity); // Sky color, ground color, intensity
+        hemiLight.position.set(0, 20, 0);
+        scene.add(hemiLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, initialDirIntensity);
+        directionalLight.position.set(5, 10, 7.5); // Position it better
+        directionalLight.castShadow = true; // Optional: for shadows
+        // Configure shadows if needed (can impact performance)
+        // directionalLight.shadow.mapSize.width = 1024;
+        // directionalLight.shadow.mapSize.height = 1024;
+        scene.add(directionalLight);
+
+        // Optional: Add another light from a different angle
+        // const pointLight = new THREE.PointLight(0xffffff, 1.0);
+        // pointLight.position.set(-5, 5, -5);
+        // scene.add(pointLight);
+
+        // --- Model Loading ---
+        const loader = new THREE.GLTFLoader();
+        let model;
+        let isRotating = true; // Start rotating by default
+        let rotationSpeed = 0.01;
+
+        loader.load(
+            'oiia-oiia.glb', // Make sure this path is correct
+            (gltf) => {
+                model = gltf.scene;
+
+                // Center and scale model
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scaleFactor = 5 / maxDim; // Scale model to roughly fit a size of 5 units
+
+                model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+                box.setFromObject(model); // Recalculate bounds after scaling
+                box.getCenter(center); // Recalculate center
+                model.position.sub(center); // Center the model at the origin
+
+                scene.add(model);
+                camera.position.z = 10; // Adjust camera distance based on scaled size
+                camera.lookAt(0, 0, 0); // Look at the centered model
+
+                console.log("Model loaded successfully.");
+            },
+            (xhr) => {
+                // Optional: Progress logging
+                // console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+            },
+            (error) => {
+                console.error('Error loading GLB model:', error);
+                // Display an error message to the user in the canvas container
+                canvasContainer.innerHTML = `<p style="color: red; text-align: center; padding-top: 50px;">Error loading 3D model. Check console for details.</p>`;
+            }
+        );
+
+        // --- Interaction (Drag/Touch Rotate) ---
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        const onPointerDown = (event) => {
+            isDragging = true;
+            const x = event.clientX || event.touches[0].clientX;
+            const y = event.clientY || event.touches[0].clientY;
+            previousMousePosition = { x: x, y: y };
+            canvasContainer.style.cursor = 'grabbing';
+        };
+
+        const onPointerMove = (event) => {
+            if (!isDragging || !model) return;
+
+            const x = event.clientX || event.touches[0].clientX;
+            const y = event.clientY || event.touches[0].clientY;
+
+            const deltaMove = {
+                x: x - previousMousePosition.x,
+                y: y - previousMousePosition.y
+            };
+
+            // Adjust rotation sensitivity if needed
+            model.rotation.y += deltaMove.x * 0.005;
+            model.rotation.x += deltaMove.y * 0.005;
+
+            previousMousePosition = { x: x, y: y };
+        };
+
+        const onPointerUp = () => {
+            if (isDragging) {
+                isDragging = false;
+                canvasContainer.style.cursor = 'grab';
+            }
+        };
+
+        // Use pointer events for unified mouse/touch
+        canvasContainer.addEventListener('pointerdown', onPointerDown);
+        canvasContainer.addEventListener('pointermove', onPointerMove);
+        canvasContainer.addEventListener('pointerup', onPointerUp);
+        canvasContainer.addEventListener('pointerleave', onPointerUp); // Stop dragging if pointer leaves canvas
+        canvasContainer.style.cursor = 'grab'; // Initial cursor
+
+
+        // --- Controls ---
+        const toggleButton = document.getElementById('toggleRotate');
+        const rotationSpeedInput = document.getElementById('rotationSpeed');
+        const bgColorInput = document.getElementById('bgColor');
+        const ambientLightInput = document.getElementById('ambientLight');
+        const hemiLightInput = document.getElementById('hemiLight');
+        const dirLightInput = document.getElementById('dirLight');
+        const rainbowBgButton = document.getElementById('rainbowBgButton');
+        const rainbowLightsButton = document.getElementById('rainbowLightsButton');
+
+        // Initial values from inputs
+        scene.background = new THREE.Color(bgColorInput.value);
+        ambientLight.intensity = parseFloat(ambientLightInput.value);
+        hemiLight.intensity = parseFloat(hemiLightInput.value);
+        directionalLight.intensity = parseFloat(dirLightInput.value);
+        rotationSpeed = parseFloat(rotationSpeedInput.value);
+        toggleButton.textContent = `Auto Rotate ${isRotating ? 'OFF' : 'ON'}`; // Initial state update
+
+
+        toggleButton.addEventListener('click', () => {
+            isRotating = !isRotating;
+            toggleButton.textContent = `Auto Rotate ${isRotating ? 'OFF' : 'ON'}`;
+        });
+
+        rotationSpeedInput.addEventListener('input', (e) => {
+           rotationSpeed = parseFloat(e.target.value);
+        });
+
+        bgColorInput.addEventListener('input', (e) => {
+            if (!isRainbowBgActive) { // Only change if rainbow BG is off
+               scene.background = new THREE.Color(e.target.value);
+            }
+        });
+
+        ambientLightInput.addEventListener('input', (e) => {
+            ambientLight.intensity = parseFloat(e.target.value);
+        });
+        hemiLightInput.addEventListener('input', (e) => {
+            hemiLight.intensity = parseFloat(e.target.value);
+        });
+        dirLightInput.addEventListener('input', (e) => {
+            directionalLight.intensity = parseFloat(e.target.value);
+        });
+
+        // --- Rainbow Effects ---
+        let isRainbowBgActive = false;
+        let isRainbowLightsActive = false;
+        let rainbowHue = 0;
+        const rainbowSpeed = 0.002; // How fast the rainbow cycles
+
+        rainbowBgButton.addEventListener('click', () => {
+            isRainbowBgActive = !isRainbowBgActive;
+            rainbowBgButton.textContent = isRainbowBgActive ? 'Stop Rainbow BG' : 'Rainbow BG';
+             rainbowBgButton.style.backgroundColor = isRainbowBgActive ? '#dc3545' : '#007BFF'; // Red when active
+            if (!isRainbowBgActive) {
+                // Reset to selected color when stopped
+                scene.background = new THREE.Color(bgColorInput.value);
+            }
+        });
+
+        rainbowLightsButton.addEventListener('click', () => {
+            isRainbowLightsActive = !isRainbowLightsActive;
+            rainbowLightsButton.textContent = isRainbowLightsActive ? 'Stop Rainbow Lights' : 'Rainbow Lights';
+            rainbowLightsButton.style.backgroundColor = isRainbowLightsActive ? '#dc3545' : '#007BFF'; // Red when active
+            if (!isRainbowLightsActive) {
+                // Reset lights to white when stopped
+                ambientLight.color.setHex(0xffffff);
+                hemiLight.color.setHex(0xffffff); // Set sky color
+                hemiLight.groundColor.setHex(0x444444); // Keep ground color consistent or make it rainbow too? Let's keep it simple.
+                directionalLight.color.setHex(0xffffff);
+            }
+        });
+
+        // --- Resize Handling ---
+        const onWindowResize = () => {
+            camera.aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+        };
+        window.addEventListener('resize', onWindowResize);
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update rainbow hue
+            rainbowHue = (rainbowHue + rainbowSpeed) % 1.0; // Cycle hue from 0 to 1
+
+            // Apply rainbow background if active
+            if (isRainbowBgActive) {
+                scene.background.setHSL(rainbowHue, 0.8, 0.6); // Adjust saturation (0.8) and lightness (0.6) as needed
+            }
+
+            // Apply rainbow lights if active
+            if (isRainbowLightsActive) {
+                ambientLight.color.setHSL(rainbowHue, 0.8, 0.5 * ambientLight.intensity / initialAmbientIntensity); // Adjust brightness relative to slider
+                 hemiLight.color.setHSL(rainbowHue, 0.8, 0.5 * hemiLight.intensity / initialHemiIntensity);
+                 // Optionally cycle ground color too:
+                 // hemiLight.groundColor.setHSL((rainbowHue + 0.5) % 1.0, 0.5, 0.2);
+                directionalLight.color.setHSL(rainbowHue, 0.9, 0.6 * directionalLight.intensity / initialDirIntensity);
+            }
+
+            // Auto-rotate model
+            if (model && isRotating && !isDragging) { // Pause auto-rotate while dragging
+                model.rotation.y += rotationSpeed;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // --- Start ---
+        animate();
+
+    </script>
+</body>
+</html>
