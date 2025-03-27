@@ -1,6 +1,9 @@
 # oiia-oiia
 [[hwkims.github.io/oiia-oiia/](https://hwkims.github.io/oiia-oiia/)
 ](https://hwkims.github.io/oiia-oiia/)
+
+![image](https://github.com/user-attachments/assets/64e074ef-0779-4409-94ee-97b287b8733f)
+
 oiia oiia oiia oiia
 ![image](https://github.com/user-attachments/assets/8af7178c-75ac-4b22-9105-771b4441267e)
 구글 제미나이.
